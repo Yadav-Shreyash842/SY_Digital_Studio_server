@@ -17,6 +17,12 @@ import { notFound, errorHandler } from './middleware/error.js';
 dotenv.config();
 
 const app = express();
+const allowedOrigins = new Set(
+  [process.env.CLIENT_URL, process.env.CLIENT_URLS, 'http://localhost:5173', 'https://sy-digital-studio-clients.vercel.app']
+    .filter(Boolean)
+    .flatMap((value) => String(value).split(',').map((origin) => origin.trim()))
+    .filter(Boolean)
+);
 
 const sanitizeString = (value) => value
   .replace(/<script.*?>.*?<\/script>/gi, '')
@@ -56,7 +62,17 @@ const sanitizeRequest = (request, _, next) => {
 
 app.use(helmet());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 200 }));
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.has(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`CORS blocked origin: ${origin}`));
+  },
+  credentials: true,
+}));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(sanitizeRequest);
