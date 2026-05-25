@@ -64,7 +64,9 @@ app.use(helmet());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 200 }));
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.has(origin)) {
+    const isAllowedPreview = Boolean(origin) && /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin);
+
+    if (!origin || allowedOrigins.has(origin) || isAllowedPreview) {
       callback(null, true);
       return;
     }
