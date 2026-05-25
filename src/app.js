@@ -66,6 +66,10 @@ app.get('/', (_, response) => {
   response.json({ message: 'SY Digital Studio is live' });
 });
 
+app.get('/health', (_, response) => {
+  response.json({ message: 'SY Digital Studio is live' });
+});
+
 app.get('/api/health', (_, response) => {
   response.json({ status: 'ok' });
 });
