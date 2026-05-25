@@ -1,0 +1,15 @@
+import mongoose from 'mongoose';
+
+const testimonialSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    company: { type: String, required: true, trim: true },
+    quote: { type: String, required: true },
+    projectType: String,
+    image: String,
+    rating: { type: Number, default: 5 },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model('Testimonial', testimonialSchema);
