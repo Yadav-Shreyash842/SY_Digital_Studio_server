@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import { createRandomToken, createToken } from '../utils/tokens.js';
 import { sendEmail } from '../utils/email.js';
+import jwt from 'jsonwebtoken';
 
 const authCookieOptions = {
   httpOnly: true,
@@ -80,19 +81,34 @@ export const logout = async (_, response) => {
 };
 
 export const me = async (request, response) => {
-  response.json({
-    user: request.user
-      ? {
-          id: request.user._id,
-          name: request.user.name,
-          email: request.user.email,
-          role: request.user.role,
-          isVerified: request.user.isVerified,
-            company: request.user.company,
-            phone: request.user.phone,
-        }
-      : null,
-  });
+  const token = request.cookies.token || request.headers.authorization?.replace('Bearer ', '');
+
+  if (!token) {
+    return response.json({ user: null });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (!user) {
+      return response.json({ user: null });
+    }
+
+    response.json({
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+        company: user.company,
+        phone: user.phone,
+      },
+    });
+  } catch {
+    response.json({ user: null });
+  }
 };
 
 export const forgotPassword = async (request, response) => {
