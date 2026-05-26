@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import {
 	createBlogPost,
 	createGalleryImage,
@@ -20,6 +21,13 @@ import {
 } from '../controllers/adminController.js';
 import { authorize, protect } from '../middleware/auth.js';
 
+const storage = multer.diskStorage({
+	destination: (_, __, callback) => callback(null, 'uploads'),
+	filename: (_, file, callback) => callback(null, `${Date.now()}-${file.originalname}`),
+});
+
+const upload = multer({ storage });
+
 const router = Router();
 
 router.get('/dashboard', protect, authorize('admin'), getAdminDashboard);
@@ -36,8 +44,8 @@ router.delete('/testimonials/:id', protect, authorize('admin'), deleteTestimonia
 router.post('/gallery', protect, authorize('admin'), createGalleryImage);
 router.put('/gallery/:id', protect, authorize('admin'), updateGalleryImage);
 router.delete('/gallery/:id', protect, authorize('admin'), deleteGalleryImage);
-router.post('/blogs', protect, authorize('admin'), createBlogPost);
-router.put('/blogs/:id', protect, authorize('admin'), updateBlogPost);
+router.post('/blogs', protect, authorize('admin'), upload.single('thumbnail'), createBlogPost);
+router.put('/blogs/:id', protect, authorize('admin'), upload.single('thumbnail'), updateBlogPost);
 router.delete('/blogs/:id', protect, authorize('admin'), deleteBlogPost);
 
 export default router;

@@ -8,6 +8,50 @@ import GalleryImage from '../models/GalleryImage.js';
 import BlogPost from '../models/BlogPost.js';
 import { seedAdminUser, seedBlogPosts, seedGalleryImages, seedServices, seedTeamMembers, seedTestimonials } from '../utils/seedData.js';
 
+const slugify = (value) => String(value || '')
+  .toLowerCase()
+  .trim()
+  .replace(/['"]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/^-+|-+$/g, '');
+
+const parseTags = (value) => {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+
+  if (typeof value === 'string') {
+    return value.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+
+  return [];
+};
+
+const normalizeBlogPayload = (request, existingBlogPost = null) => {
+  const body = request.body || {};
+  const title = body.title || existingBlogPost?.title;
+  const thumbnail = request.file ? `/uploads/${request.file.filename}` : body.thumbnail || body.image || existingBlogPost?.thumbnail || existingBlogPost?.image;
+
+  return {
+    title,
+    slug: body.slug || existingBlogPost?.slug || slugify(title),
+    category: body.category || existingBlogPost?.category || 'Strategy',
+    description: body.description || body.excerpt || existingBlogPost?.description || existingBlogPost?.excerpt || '',
+    content: body.content || existingBlogPost?.content || body.description || existingBlogPost?.description || '',
+    thumbnail,
+    image: thumbnail,
+    readingTime: body.readingTime || body.readTime || existingBlogPost?.readingTime || existingBlogPost?.readTime || '5 min read',
+    readTime: body.readTime || body.readingTime || existingBlogPost?.readTime || existingBlogPost?.readingTime || '5 min read',
+    author: body.author || existingBlogPost?.author || 'SY Digital Studio',
+    tags: parseTags(body.tags || existingBlogPost?.tags),
+    publishDate: body.publishDate || existingBlogPost?.publishDate || new Date(),
+    featured: body.featured === true || body.featured === 'true' || existingBlogPost?.featured || false,
+    published: body.published === false || body.published === 'false' ? false : body.published === true || body.published === 'true' ? true : existingBlogPost?.published !== false,
+    excerpt: body.excerpt || body.description || existingBlogPost?.excerpt || existingBlogPost?.description || '',
+    quote: body.quote || existingBlogPost?.quote || '',
+  };
+};
+
 const maybeSeedAdmin = async () => {
   const existingAdmin = await User.findOne({ email: seedAdminUser.email });
 
@@ -139,12 +183,19 @@ export const deleteGalleryImage = async (request, response) => {
 };
 
 export const createBlogPost = async (request, response) => {
-  const blogPost = await BlogPost.create(request.body);
+  const blogPost = await BlogPost.create(normalizeBlogPayload(request));
   response.status(201).json({ blogPost });
 };
 
 export const updateBlogPost = async (request, response) => {
-  const blogPost = await BlogPost.findByIdAndUpdate(request.params.id, request.body, { new: true });
+  const blogPost = await BlogPost.findById(request.params.id);
+
+  if (!blogPost) {
+    return response.status(404).json({ message: 'Blog post not found' });
+  }
+
+  Object.assign(blogPost, normalizeBlogPayload(request, blogPost));
+  await blogPost.save();
   response.json({ blogPost });
 };
 

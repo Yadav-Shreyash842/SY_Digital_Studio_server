@@ -17,9 +17,9 @@ import {
   ensureSeedData,
 } from '../utils/seedData.js';
 
-const listOrSeed = async (model, seed) => {
+const listOrSeed = async (model, seed, query = {}) => {
   try {
-    const items = await model.find().sort({ createdAt: -1 });
+    const items = await model.find(query).sort({ createdAt: -1 });
     return items.length ? items : seed;
   } catch {
     return seed;
@@ -38,7 +38,7 @@ export const getSiteContent = async (_, response) => {
     listOrSeed(TeamMember, seedTeamMembers),
     listOrSeed(Testimonial, seedTestimonials),
     listOrSeed(GalleryImage, seedGalleryImages),
-    listOrSeed(BlogPost, seedBlogPosts),
+    listOrSeed(BlogPost, seedBlogPosts, { published: { $ne: false } }),
     listOrSeed(Project, seedProjectTemplates),
     RecruiterProfile.findOne().catch(() => null),
     Certification.find().sort({ createdAt: -1 }).catch(() => []),

@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes.js';
 import siteRoutes from './routes/siteRoutes.js';
+import blogRoutes from './routes/blogRoutes.js';
 import projectRoutes from './routes/projectRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
 import clientRoutes from './routes/clientRoutes.js';
@@ -79,6 +80,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(sanitizeRequest);
 app.use(morgan('dev'));
+app.use('/uploads', express.static('uploads'));
 
 app.get('/', (_, response) => {
   response.json({ message: 'SY Digital Studio is live' });
@@ -93,6 +95,7 @@ app.get('/api/health', (_, response) => {
 });
 
 app.use('/api/site', siteRoutes);
+app.use('/api/blogs', blogRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/services', serviceRoutes);
